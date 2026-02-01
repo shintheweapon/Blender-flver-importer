@@ -394,15 +394,15 @@ def read_flver(file_name):
         assert data.popleft() == 0  # B
         assert data.popleft() == 0  # B
 
-        assert data.popleft() == 0  # I
-        assert data.popleft() == 0  # I
+        data.popleft()  # I - reserved, can be non-zero in newer versions
+        data.popleft()  # I - reserved, can be non-zero in newer versions
         unk68 = data.popleft()  # I
-        assert unk68 in {0, 1, 2, 3, 4}
-        assert data.popleft() == 0  # I
-        assert data.popleft() == 0  # I
-        assert data.popleft() == 0  # I
-        assert data.popleft() == 0  # I
-        assert data.popleft() == 0  # I
+        assert unk68 in {0, 1, 2, 3, 4, 5}  # Added 5 for newer versions
+        data.popleft()  # I - reserved
+        data.popleft()  # I - reserved
+        data.popleft()  # I - Unk74, can be 0 or 0x10
+        data.popleft()  # I - reserved
+        data.popleft()  # I - reserved
 
         header = flver.Header(
             endianness=endianness,
