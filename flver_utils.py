@@ -165,12 +165,12 @@ def read_mesh(reader):
     data = deque(reader.read_struct("BBBBIIIIIIIIIII"))
 
     dynamic_mode = flver.Mesh.DynamicMode(data.popleft())  # B
-    assert data.popleft() == 0  # B
-    assert data.popleft() == 0  # B
-    assert data.popleft() == 0  # B
+    data.popleft()  # B - reserved, can be non-zero in newer versions
+    data.popleft()  # B - reserved
+    data.popleft()  # B - reserved
     material_index = data.popleft()  # I
-    assert data.popleft() == 0  # I
-    assert data.popleft() == 0  # I
+    data.popleft()  # I - reserved, can be non-zero in newer versions
+    data.popleft()  # I - reserved
     default_bone_index = data.popleft()  # I
     bone_count = data.popleft()  # I
     bounding_offset = data.popleft()  # TODO: bounding box offset (I)
@@ -178,7 +178,7 @@ def read_mesh(reader):
     index_buffer_count = data.popleft()  # I
     index_buffer_offset = data.popleft()  # I
     vertex_buffer_count = data.popleft()  # I
-    assert vertex_buffer_count in {1, 2, 3}
+    assert vertex_buffer_count >= 1  # At least 1 vertex buffer required
     vertex_buffer_offset = data.popleft()  # I
 
     bone_count = default_bone_index # In DS3+ this seems to be necessary to import rigs, however it is inconsistent.
