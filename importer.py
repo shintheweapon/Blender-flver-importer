@@ -91,12 +91,10 @@ def create_mesh(base_name, collection, flver_data, flver_mesh, inflated_mesh, ar
             "Armature")).object = armature
         obj.parent = armature
 
-        # Create vertex groups for bones
-        for bone_index in flver_mesh.bone_indices:
-            try:
-                obj.vertex_groups.new(name=flver_data.bones[bone_index].name)
-            except IndexError:
-                pass
+        # Create vertex groups for ALL bones in skeleton
+        # (Elden Ring Nightreign vertex buffer uses global bone indices directly)
+        for bone in flver_data.bones:
+            obj.vertex_groups.new(name=bone.name)
 
     # Use bmesh for UVs and bone weights
     bm = bmesh.new()
@@ -113,26 +111,18 @@ def create_mesh(base_name, collection, flver_data, flver_mesh, inflated_mesh, ar
     # Apply bone weights (only if armature exists)
     if armature is not None:
         weight_layer = bm.verts.layers.deform.new()
-
-        debug_count = 0
+        num_bones = len(flver_data.bones)
 
         for vert in bm.verts:
             try:
                 weights = inflated_mesh.vertices.bone_weights[vert.index]
                 indices = inflated_mesh.vertices.bone_indices[vert.index]
 
-                if debug_count < 5:
-                    print(f"=== Vertex {vert.index} ===")
-                    print(
-                        f"  mesh.bone_indices (palette): {list(flver_mesh.bone_indices)[:10]}...")
-                    print(f"  vertex bone_indices: {indices}")
-                    print(f"  vertex bone_weights: {weights}")
-                    print(f"  num vertex groups: {len(obj.vertex_groups)}")
-                    debug_count += 1
-
                 for index, weight in zip(indices, weights):
                     if weight != 0.0:
-                        vert[weight_layer][index] = weight
+                        bone_idx = int(index)
+                        if 0 <= bone_idx < num_bones:
+                            vert[weight_layer][bone_idx] = weight
             except IndexError:
                 continue
 
