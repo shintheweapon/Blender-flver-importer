@@ -176,32 +176,42 @@ class VertexBuffer:
 
 class VertexBufferStructMember:
     class DataType(Enum):
+        # 1 single precision float
+        FLOAT1 = 0x00
         # 2 single precision floats
         FLOAT2 = 0x01
         # 3 single precision floats
         FLOAT3 = 0x02
         # 4 single precision floats
         FLOAT4 = 0x03
-        # unknown
-        BYTE4A = 0x10
-        # 4 bytes
-        BYTE4B = 0x11
-        # 2 shorts
-        SHORT2_TO_FLOAT2 = 0x12
-        # 4 bytes
-        BYTE4C = 0x13
-        # 2 shorts
-        UV = 0x15
-        # 2 pairs of 2 shorts
-        UV_PAIR = 0x16
-        # 4 shorts (unsigned?)
-        SHORT_BONE_INDICES = 0x18
-        # 4 shorts
-        SHORT4_TO_FLOAT4A = 0x1A
-        # unknown
-        SHORT4_TO_FLOAT4B = 0x2E    
-        # unknown
+        # 4 bytes (color)
+        COLOR = 0x10
+        # 4 unsigned bytes
+        UBYTE4 = 0x11
+        # 4 signed bytes
+        BYTE4 = 0x12
+        # 4 unsigned bytes normalized
+        UBYTE4_NORM = 0x13
+        # 4 signed bytes normalized
+        BYTE4_NORM = 0x14
+        # 2 signed shorts
+        SHORT2 = 0x15
+        # 4 signed shorts
+        SHORT4 = 0x16
+        # 2 unsigned shorts
+        USHORT2 = 0x17
+        # 4 unsigned shorts
+        USHORT4 = 0x18
+        # 4 signed shorts normalized
+        SHORT4_NORM = 0x1A
+        # 2 half precision floats
+        HALF2 = 0x2D
+        # 4 half precision floats
+        HALF4 = 0x2E
+        # 4 bytes (edge compressed)
         BYTE4E = 0x2F
+        # Edge compressed format
+        EDGE_COMPRESSED = 0xF0
 
     class AttributeType(Enum):
         # Location of the vertex.
@@ -230,26 +240,33 @@ class VertexBufferStructMember:
         self.index = index
 
     def size(self):
+        if self.data_type == self.DataType.FLOAT1:
+            return 4
         if self.data_type in {
-                self.DataType.BYTE4A,
-                self.DataType.BYTE4B,
-                self.DataType.SHORT2_TO_FLOAT2,
-                self.DataType.BYTE4C,
-                self.DataType.UV,
+                self.DataType.COLOR,
+                self.DataType.UBYTE4,
+                self.DataType.BYTE4,
+                self.DataType.UBYTE4_NORM,
+                self.DataType.BYTE4_NORM,
+                self.DataType.SHORT2,
+                self.DataType.USHORT2,
                 self.DataType.BYTE4E,
         }:
             return 4
         if self.data_type in {
                 self.DataType.FLOAT2,
-                self.DataType.UV_PAIR,
-                self.DataType.SHORT_BONE_INDICES,
-                self.DataType.SHORT4_TO_FLOAT4A,
-                self.DataType.SHORT4_TO_FLOAT4B,
+                self.DataType.SHORT4,
+                self.DataType.USHORT4,
+                self.DataType.SHORT4_NORM,
+                self.DataType.HALF2,
         }:
             return 8
         if self.data_type == self.DataType.FLOAT3:
             return 12
-        if self.data_type == self.DataType.FLOAT4:
+        if self.data_type in {
+                self.DataType.FLOAT4,
+                self.DataType.HALF4,
+        }:
             return 16
         raise Exception(f"unknown size for data type: {self.data_type}")
 
@@ -260,31 +277,52 @@ class VertexBufferStructMember:
             uv_divisor = 1024.0
         offset += self.struct_offset
 
-        #print(f'Type: {self.data_type} | Attr: {self.attribute_type}')
-        
+        # Float types
+        if self.data_type == self.DataType.FLOAT1:
+            return struct.unpack_from("f", buf, offset)[0]
         if self.data_type == self.DataType.FLOAT2:
             return tuple(struct.unpack_from("ff", buf, offset))
         if self.data_type == self.DataType.FLOAT3:
             return tuple(struct.unpack_from("fff", buf, offset))
         if self.data_type == self.DataType.FLOAT4:
             return tuple(struct.unpack_from("ffff", buf, offset))
-        
-        if (self.data_type == self.DataType.BYTE4A):
-            weights = struct.unpack_from("bbbb", buf, offset)
-            return tuple(weight / 127.0 for weight in weights)
-        if (self.data_type == self.DataType.BYTE4B):
-                return tuple(struct.unpack_from("BBBB", buf, offset))
-        if (self.data_type == self.DataType.BYTE4C):
-            weights = struct.unpack_from("BBBB", buf, offset)
-            return tuple(weight / 255.0 for weight in weights)
-        
-        if (self.data_type == self.DataType.UV): 
+
+        # Byte types
+        if self.data_type in {self.DataType.COLOR, self.DataType.UBYTE4}:
+            return tuple(struct.unpack_from("BBBB", buf, offset))
+        if self.data_type == self.DataType.BYTE4:
+            return tuple(struct.unpack_from("bbbb", buf, offset))
+        if self.data_type == self.DataType.UBYTE4_NORM:
+            values = struct.unpack_from("BBBB", buf, offset)
+            return tuple(v / 255.0 for v in values)
+        if self.data_type == self.DataType.BYTE4_NORM:
+            values = struct.unpack_from("bbbb", buf, offset)
+            return tuple(v / 127.0 for v in values)
+        if self.data_type == self.DataType.BYTE4E:
+            return tuple(struct.unpack_from("BBBB", buf, offset))
+
+        # Short types (used for UV coordinates and bone indices)
+        if self.data_type == self.DataType.SHORT2:
             uv = struct.unpack_from("hh", buf, offset)
             return tuple(component / uv_divisor for component in uv)
-        if (self.data_type == self.DataType.UV_PAIR):
+        if self.data_type == self.DataType.SHORT4:
             uv = struct.unpack_from("hhhh", buf, offset)
             return tuple(component / uv_divisor for component in uv)
-        
+        if self.data_type == self.DataType.USHORT2:
+            uv = struct.unpack_from("HH", buf, offset)
+            return tuple(component / uv_divisor for component in uv)
+        if self.data_type == self.DataType.USHORT4:
+            return tuple(struct.unpack_from("HHHH", buf, offset))
+        if self.data_type == self.DataType.SHORT4_NORM:
+            values = struct.unpack_from("hhhh", buf, offset)
+            return tuple(v / 32767.0 for v in values)
+
+        # Half precision floats
+        if self.data_type == self.DataType.HALF2:
+            return tuple(struct.unpack_from("ee", buf, offset))
+        if self.data_type == self.DataType.HALF4:
+            return tuple(struct.unpack_from("eeee", buf, offset))
+
         raise Exception(f'Unsupported type {self.data_type}')
 
         

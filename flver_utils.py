@@ -172,7 +172,7 @@ def read_mesh(reader):
     data.popleft()  # I - reserved, can be non-zero in newer versions
     data.popleft()  # I - reserved
     default_bone_index = data.popleft()  # I
-    bone_count = data.popleft()  # I
+    bone_count_raw = data.popleft()  # I
     bounding_offset = data.popleft()  # TODO: bounding box offset (I)
     bone_offset = data.popleft()  # I
     index_buffer_count = data.popleft()  # I
@@ -181,8 +181,12 @@ def read_mesh(reader):
     assert vertex_buffer_count >= 1  # At least 1 vertex buffer required
     vertex_buffer_offset = data.popleft()  # I
 
-    bone_count = default_bone_index # In DS3+ this seems to be necessary to import rigs, however it is inconsistent.
-    # TODO: Find more robust method for DS3+ rigs.
+    # For newer versions (Elden Ring Nightreign+), use actual bone_count from file
+    # For older versions (DS3), the raw value may be 0, so use default_bone_index as workaround
+    if bone_count_raw > 0:
+        bone_count = bone_count_raw
+    else:
+        bone_count = default_bone_index
 
     bone_indices = reader.read_struct("I" * bone_count, bone_offset)
     index_buffer_indices = reader.read_struct("I" * index_buffer_count,

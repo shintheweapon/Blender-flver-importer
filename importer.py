@@ -87,7 +87,8 @@ def create_mesh(base_name, collection, flver_data, flver_mesh, inflated_mesh, ar
 
     # Setup armature modifier (only if armature exists)
     if armature is not None:
-        obj.modifiers.new(type="ARMATURE", name=pgettext("Armature")).object = armature
+        obj.modifiers.new(type="ARMATURE", name=pgettext(
+            "Armature")).object = armature
         obj.parent = armature
 
         # Create vertex groups for bones
@@ -112,10 +113,23 @@ def create_mesh(base_name, collection, flver_data, flver_mesh, inflated_mesh, ar
     # Apply bone weights (only if armature exists)
     if armature is not None:
         weight_layer = bm.verts.layers.deform.new()
+
+        debug_count = 0
+
         for vert in bm.verts:
             try:
                 weights = inflated_mesh.vertices.bone_weights[vert.index]
                 indices = inflated_mesh.vertices.bone_indices[vert.index]
+
+                if debug_count < 5:
+                    print(f"=== Vertex {vert.index} ===")
+                    print(
+                        f"  mesh.bone_indices (palette): {list(flver_mesh.bone_indices)[:10]}...")
+                    print(f"  vertex bone_indices: {indices}")
+                    print(f"  vertex bone_weights: {weights}")
+                    print(f"  num vertex groups: {len(obj.vertex_groups)}")
+                    debug_count += 1
+
                 for index, weight in zip(indices, weights):
                     if weight != 0.0:
                         vert[weight_layer][index] = weight
@@ -193,7 +207,8 @@ def create_armature(name, collection, flver_data, z_up):
         edit_bone.tail = convert_coordinates(tail[0], tail[1], tail[2], z_up)
 
         # Compute matrix for children
-        child_matrix = parent_matrix @ Matrix.Translation(translation_vector) @ rotation_matrix
+        child_matrix = parent_matrix @ Matrix.Translation(
+            translation_vector) @ rotation_matrix
 
         # Process child
         if flver_bone.child_index >= 0 and flver_bone.child_index < len(flver_data.bones):
