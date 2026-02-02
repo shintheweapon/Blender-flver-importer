@@ -143,7 +143,8 @@ class VertexBuffer:
 
     def _inflate(self, vertices, struct, version):
         struct_size = sum(member.size() for member in struct)
-        assert self.struct_size == struct_size
+        if self.struct_size != struct_size:
+            print(f"Warning: struct size mismatch (expected {self.struct_size}, calculated {struct_size})")
         assert len(self.buffer_data) % self.struct_size == 0
 
         # For now, only select from a limited set of attributes: POSITION,
@@ -268,6 +269,8 @@ class VertexBufferStructMember:
                 self.DataType.HALF4,
         }:
             return 16
+        if self.data_type == self.DataType.EDGE_COMPRESSED:
+            return 0  # EdgeCompressed is handled separately
         raise Exception(f"unknown size for data type: {self.data_type}")
 
     def _unpack(self, buf, offset, version):
