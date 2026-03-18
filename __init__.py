@@ -1,6 +1,6 @@
 import bpy
 from bpy_extras.io_utils import ImportHelper
-from bpy.props import StringProperty, CollectionProperty, EnumProperty
+from bpy.props import BoolProperty, StringProperty, CollectionProperty, EnumProperty
 from pathlib import Path
 
 
@@ -32,14 +32,22 @@ class FLVER_OT_importer(bpy.types.Operator, ImportHelper):
         default='Z_UP',
     )
 
+    connect_bones: BoolProperty(
+        name="Connect Child Bones",
+        description="Connect single-child bones to their parent (sets use_connect). "
+                    "Branching bones are unaffected.",
+        default=False,
+    )
+
     def execute(self, context):
         from .importer import import_flver
 
         z_up = (self.coordinate_system == 'Z_UP')
+        connect_bones = self.connect_bones
 
         for file in self.files:
             file_path = Path(self.directory) / file.name
-            import_flver(file_path, z_up=z_up)
+            import_flver(file_path, z_up=z_up, connect_bones=connect_bones)
 
         return {"FINISHED"}
 

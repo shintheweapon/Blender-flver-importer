@@ -8,7 +8,7 @@ from bpy.app.translations import pgettext
 from .flver_utils import read_flver
 
 
-def import_flver(file_path, z_up=True):
+def import_flver(file_path, z_up=True, connect_bones=False):
     """
     Import a FLVER file into Blender.
 
@@ -35,7 +35,7 @@ def import_flver(file_path, z_up=True):
     # Create armature only if there are bones
     armature = None
     if len(flver_data.bones) > 0:
-        armature = create_armature(base_name, collection, flver_data, z_up)
+        armature = create_armature(base_name, collection, flver_data, z_up, connect_bones)
 
     # Create meshes
     for flver_mesh, inflated_mesh in zip(flver_data.meshes, inflated_meshes):
@@ -140,7 +140,7 @@ def get_rotation_matrix(bone):
     )
 
 
-def create_armature(name, collection, flver_data, z_up):
+def create_armature(name, collection, flver_data, z_up, connect_bones=False):
     """
     Create a Blender armature from FLVER bone data.
 
@@ -228,6 +228,16 @@ def create_armature(name, collection, flver_data, z_up):
     for eb in armature.data.edit_bones:
         eb.select = True
     bpy.ops.armature.calculate_roll(type='GLOBAL_POS_Z')
+
+    # Optional: snap single-child bone tails to child head and set use_connect
+    if connect_bones:
+        for edit_bone in armature.data.edit_bones:
+            children = edit_bone.children
+            if len(children) != 1:
+                continue
+            child = children[0]
+            edit_bone.tail = child.head
+            child.use_connect = True
 
     bpy.ops.object.editmode_toggle()
     return armature
