@@ -1,0 +1,11 @@
+schema_version = "1.0.0"
+id = "io_import_flver"
+version = "0.2.0"
+name = "FLVER Importer"
+tagline = "Import FLVER model files from FromSoftware games"
+maintainer = "Felix Benter"
+type = "add-on"
+blender_version_min = "4.2.0"
+license = ["SPDX:GPL-3.0-or-later"]
+website = "https://github.com/shintheweapon/Blender-flver-importer"
+tags = ["Import-Export"]

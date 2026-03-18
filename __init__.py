@@ -1,17 +1,3 @@
-bl_info = {
-    "name": "FLVER Importer",
-    "description": "Import FLVER model files from FromSoftware games",
-    "author": "Felix Benter",
-    "version": (1, 0, 0),
-    "blender": (4, 0, 0),
-    "category": "Import-Export",
-    "location": "File > Import",
-    "warning": "",
-    "support": "COMMUNITY",
-    "wiki_url": "https://github.com/FelixBenter/FromSoftware-Blender-Importer",
-    "tracker_url": "https://github.com/FelixBenter/FromSoftware-Blender-Importer/issues",
-}
-
 import bpy
 from bpy_extras.io_utils import ImportHelper
 from bpy.props import StringProperty, CollectionProperty, EnumProperty
