@@ -187,18 +187,16 @@ def create_armature(name, collection, flver_data, z_up):
         translation_vector = Vector(flver_bone.translation)
         rotation_matrix = get_rotation_matrix(flver_bone)
 
-        # Compute head position from parent matrix
+        # Compute accumulated world-space matrix for this bone
+        child_matrix = parent_matrix @ Matrix.Translation(translation_vector) @ rotation_matrix
+
+        # Head position from parent matrix, tail from world-space rotation
         head = parent_matrix @ translation_vector
-        # Tail uses LOCAL rotation only (like original code)
-        tail = head + rotation_matrix @ Vector((0, 0.05, 0))
+        tail = head + child_matrix.to_3x3() @ Vector((0, 0.05, 0))
 
         # Apply coordinate conversion
         edit_bone.head = convert_coordinates(head[0], head[1], head[2], z_up)
         edit_bone.tail = convert_coordinates(tail[0], tail[1], tail[2], z_up)
-
-        # Compute matrix for children
-        child_matrix = parent_matrix @ Matrix.Translation(
-            translation_vector) @ rotation_matrix
 
         # Process child
         if flver_bone.child_index >= 0 and flver_bone.child_index < len(flver_data.bones):
@@ -216,13 +214,7 @@ def create_armature(name, collection, flver_data, z_up):
     def connect_bone(bone):
         children = bone.children
         if len(children) == 0:
-            parent = bone.parent
-            if parent is not None:
-                direction = parent.tail - parent.head
-                direction.normalize()
-                length = (bone.tail - bone.head).magnitude
-                bone.tail = bone.head + direction * length
-            return
+            return  # Keep tail from transform_bone (world-space orientation)
         if len(children) > 1:
             for child in children:
                 connect_bone(child)
