@@ -171,7 +171,7 @@ def create_armature(name, collection, flver_data, z_up):
         if f_bone.parent_index < 0:
             root_bones.append(bone)
 
-    # Process bones using parent chain traversal
+    # Process bones using parent chain traversal to set head positions and hierarchy
     def transform_bone(bone_index, parent_matrix):
         if bone_index < 0 or bone_index >= len(flver_data.bones):
             return
@@ -183,49 +183,51 @@ def create_armature(name, collection, flver_data, z_up):
         if 0 <= flver_bone.parent_index < len(flver_data.bones):
             edit_bone.parent = armature.data.edit_bones[flver_bone.parent_index]
 
-        # Get local transform components
-        translation_vector = Vector(flver_bone.translation)
-        rotation_matrix = get_rotation_matrix(flver_bone)
-
         # Compute accumulated world-space matrix for this bone
-        child_matrix = parent_matrix @ Matrix.Translation(translation_vector) @ rotation_matrix
+        translation_vector = Vector(flver_bone.translation)
+        child_matrix = parent_matrix @ Matrix.Translation(translation_vector) @ get_rotation_matrix(flver_bone)
 
-        # Head position from parent matrix, tail from world-space rotation
+        # Head position from parent matrix; tail is a placeholder (overridden by geometric pass)
         head = parent_matrix @ translation_vector
         tail = head + child_matrix.to_3x3() @ Vector((0, 0.05, 0))
 
-        # Apply coordinate conversion
         edit_bone.head = convert_coordinates(head[0], head[1], head[2], z_up)
         edit_bone.tail = convert_coordinates(tail[0], tail[1], tail[2], z_up)
 
-        # Process child
+        # Process child and sibling
         if flver_bone.child_index >= 0 and flver_bone.child_index < len(flver_data.bones):
             transform_bone(flver_bone.child_index, child_matrix)
-
-        # Process sibling (with same parent matrix)
         if flver_bone.next_sibling_index >= 0 and flver_bone.next_sibling_index < len(flver_data.bones):
             transform_bone(flver_bone.next_sibling_index, parent_matrix)
 
-    # Start from bone 0 if it exists
     if len(flver_data.bones) > 0:
         transform_bone(0, Matrix())
 
-    # Post-process to connect bones (like original code)
-    def connect_bone(bone):
-        children = bone.children
-        if len(children) == 0:
-            return  # Keep tail from transform_bone (world-space orientation)
-        if len(children) > 1:
-            for child in children:
-                connect_bone(child)
-            return
-        child = children[0]
-        bone.tail = child.head
-        child.use_connect = True
-        connect_bone(child)
+    # Geometric bone orientation (mirrors blender_bone_util auto bone orientation):
+    # Step 1 — redirect non-leaf bone tails toward average child head
+    for edit_bone in armature.data.edit_bones:
+        children = edit_bone.children
+        if not children:
+            continue
+        avg_child_head = sum((c.head for c in children), Vector((0.0, 0.0, 0.0))) / len(children)
+        direction = avg_child_head - edit_bone.head
+        if direction.length > 1e-6:
+            bone_len = (edit_bone.tail - edit_bone.head).length or 0.05
+            edit_bone.tail = edit_bone.head + direction.normalized() * bone_len
 
-    for bone in root_bones:
-        connect_bone(bone)
+    # Step 2 — leaf bones inherit parent direction
+    for edit_bone in armature.data.edit_bones:
+        if edit_bone.children or not edit_bone.parent:
+            continue
+        parent_dir = edit_bone.parent.tail - edit_bone.parent.head
+        if parent_dir.length > 1e-6:
+            bone_len = (edit_bone.tail - edit_bone.head).length or 0.05
+            edit_bone.tail = edit_bone.head + parent_dir.normalized() * bone_len
+
+    # Step 3 — align all rolls so local Z faces global +Z
+    for eb in armature.data.edit_bones:
+        eb.select = True
+    bpy.ops.armature.calculate_roll(type='GLOBAL_POS_Z')
 
     bpy.ops.object.editmode_toggle()
     return armature
