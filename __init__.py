@@ -36,7 +36,7 @@ class FLVER_OT_importer(bpy.types.Operator, ImportHelper):
         name="Connect Child Bones",
         description="Connect single-child bones to their parent (sets use_connect). "
                     "Branching bones are unaffected.",
-        default=False,
+        default=True,
     )
 
     def execute(self, context):
