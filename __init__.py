@@ -22,6 +22,7 @@ _translations = {
             "将单子骨骼连接到父骨骼（设置 use_connect）。分支骨骼不受影响。",
     },
 }
+_translations["zh_HANS"] = _translations["zh_CN"]
 
 
 class FLVER_OT_importer(bpy.types.Operator, ImportHelper):
