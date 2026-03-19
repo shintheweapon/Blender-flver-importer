@@ -1,13 +1,15 @@
-# FLVER Importer for Blender 4.0+
+# FLVER Importer for Blender 4.2+
 
 A Blender addon for importing FLVER model files from FromSoftware games. This is an updated and streamlined version of the original [FromSoftware-Blender-Importer](https://github.com/FelixBenter/FromSoftware-Blender-Importer).
 
 ## Features
 
 - Direct `.flver` file import
-- Blender 4.0+ compatibility
+- Blender 4.2+ extension (uses `blender_manifest.toml`, no legacy `bl_info`)
 - Armature/rig import with bone weights
 - Coordinate system selection (Z-up Blender / Y-up Native)
+- Connect Child Bones option for cleaner armature display
+- Simplified Chinese (简体中文) UI translation
 - Support for newer games including Elden Ring Nightreign
 - No external tool dependencies
 
@@ -20,10 +22,13 @@ A Blender addon for importing FLVER model files from FromSoftware games. This is
 
 ## Installation
 
-1. Download the `io_import_flver.zip` file
+1. Download the `io_import_flver_vX.X.X.zip` file from Releases
 2. In Blender, go to **Edit > Preferences > Add-ons**
-3. Click **"Install..."** and select the zip file
-4. Enable the addon by checking the checkbox
+3. Click the **drop-down arrow** (top-right) and select **"Install from Disk..."**
+4. Select the downloaded zip
+5. Enable the addon by checking the checkbox
+
+> You can also drag and drop the zip file directly onto the Blender window.
 
 ## Usage
 
@@ -31,7 +36,8 @@ A Blender addon for importing FLVER model files from FromSoftware games. This is
 2. Select the coordinate system:
    - **Z-up (Blender)** - Converts to Blender's coordinate system
    - **Y-up (Native)** - Keeps FromSoftware's original coordinate system
-3. Select one or multiple `.flver` files to import
+3. Optionally toggle **Connect Child Bones** — connects single-child bones to their parent for a cleaner rig display (enabled by default; branching bones are unaffected)
+4. Select one or multiple `.flver` files to import
 
 ## Removed Features
 
