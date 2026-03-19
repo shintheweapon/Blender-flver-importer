@@ -4,6 +4,26 @@ from bpy.props import BoolProperty, StringProperty, CollectionProperty, EnumProp
 from pathlib import Path
 
 
+_translations = {
+    "zh_CN": {
+        ("*", "Coordinate System"):
+            "坐标系",
+        ("*", "Z-up (Blender)"):
+            "Z轴朝上 (Blender)",
+        ("*", "Convert to Blender's Z-up coordinate system"):
+            "转换为 Blender 的 Z 轴朝上坐标系",
+        ("*", "Y-up (Native)"):
+            "Y轴朝上 (原生)",
+        ("*", "Keep FromSoftware's Y-up coordinate system"):
+            "保留 FromSoftware 的 Y 轴朝上坐标系",
+        ("*", "Connect Child Bones"):
+            "连接子骨骼",
+        ("*", "Connect single-child bones to their parent (sets use_connect). Branching bones are unaffected."):
+            "将单子骨骼连接到父骨骼（设置 use_connect）。分支骨骼不受影响。",
+    },
+}
+
+
 class FLVER_OT_importer(bpy.types.Operator, ImportHelper):
     bl_idname = "import_scene.flver"
     bl_label = "FromSoftware FLVER (.flver)"
@@ -57,6 +77,7 @@ def menu_import(self, context):
 
 
 def register():
+    bpy.app.translations.register(__name__, _translations)
     bpy.utils.register_class(FLVER_OT_importer)
     bpy.types.TOPBAR_MT_file_import.append(menu_import)
 
@@ -64,3 +85,4 @@ def register():
 def unregister():
     bpy.types.TOPBAR_MT_file_import.remove(menu_import)
     bpy.utils.unregister_class(FLVER_OT_importer)
+    bpy.app.translations.unregister(__name__)
